@@ -1,28 +1,40 @@
 import sys
 import socket
 import select
+BUFFER = 1024
+HOST = 'localhost'
+PORT = 9000
+
+def send_server(conn, addr):
+    try:
+        while True:
+            msg = raw_input()
+            conn.sendall(msg)
+
+def recv_server(conn, addr):
+    while True:
+        msg = conn.recv(BUFFER)
+        print msg
 
 
-if(len(sys.argv)<3):
-    print ('python client.py hostname port')
-    sys.exit()
+def main():
+    #socket tcp
+    clientSocket = socket(AF_INET, SOCK_STREAM)
+    try:
+        clientSocket.connect((host, port))
+    except:
+        print ('Failed to connect')
+        sys.exit()
 
-host = sys.argv[1]
-port = int (sys.argv[2])
+    recvt = Thread(target=recv_server, args=(clientSocket, HOST)
+    recvt.start()
+    print('enter username\n')
+    send_server(clientSocket, HOST)
+    print('enter destination ')
+    send_server(clientSocket, HOST)
 
-#socket tcp
-clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientSocket.settimeout(2)
+    while(1):
+        print('enter msg')
+        send_server(clientSocket, HOST)
 
-try:
-    clientSocket.connect((host, port))
-except:
-    print ('Failed to connect')
-    sys.exit()
-
-
-name = raw_input('enter name pls: \n')
-clientSocket.send(name)
-rcv = clientSocket.recv(1024)
-print(rcv)
-clientSocket.close()
+    clientSocket.close()
