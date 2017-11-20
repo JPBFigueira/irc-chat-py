@@ -1,13 +1,16 @@
 import socket
 import sys
-from sys import argv                                #IMPORT LIBRARIES
-from threading import Thread
+import collections
+import time
 import Queue
+import threading
+from threading import Thread
+from SocketServer import ThreadingMixIn
 HOST = 'localhost'
 PORT = 9000
 BUFFER = 1024
 
-class ClientThread(thread):
+class ClientThread(Thread):
     def __init__(self, socket, ip, port):
         Thread.__init__(self)
         self.socket = socket
@@ -33,11 +36,13 @@ class ClientThread(thread):
             lock.release()
             eflag = 1 #error flag
             while True:
+                command = self.socket.recv(BUFFER)
                 if "send" in command:
                     content = command.partition(" ")
                     contentinner = content[2].partition(" ")
                     sendmsg = userdata + ": " + contentinner[2]
                     receiver = contentinner[0]
+                    eflag = 1
 
                     for z in userfdmap:
                         zi=z.partition(" ")
@@ -49,23 +54,46 @@ class ClientThread(thread):
                             lock.release()
 
                     if eflag == 1:
-                        replymsg = "User offline\n"
-                        filename = receiver + ".txt"
-                        file = open(filename, w+)
+                        replymsg = 'User offline\n'
+                        filename = receiver + '.txt'
+                        file = open(filename, "a+")
                         file.write(sendmsg)
-                        file.write("\n")
+                        file.write('\n')
                         file.close()
                     else:
-                        replymsg = "sucess"
+                        replymsg = 'sucess'
                         self.socket.send(replymsg)
-                        
 
 
 
-class ClientThreadRead(thread):
+
+class ClientThreadRead(Thread):
     def __init__(self, sock):
-        Thread.__init(self)
+        Thread.__init__(self)
         self.sock = sock
+
+    def run(self):
+        tcpsock2.listen(1)
+        (conn2,addr) = tcpsock2.accept()
+        welcomemsg = "hi here hearing ya"
+        conn2.send(welcomemsg)
+        chat = "initial"
+        #check if user is connected
+        while True: 
+            for p in userfdmap:
+                if str(self.sock.fileno()) in p:
+                    connected = 1
+                else:
+                    connected = 0
+
+                try:
+                    chat = sendqueues[self.sock.fileno()].get(False)
+                    print chat
+                    conn2.send(chat)
+                except Queue.Empty:
+                    chat = "none"
+                    time.sleep(2)
+
 
 
 
@@ -77,18 +105,16 @@ sendqueues = {}
 activeUsers = []
 userfdmap = []
 
-TCP_IP = '0.0.0.0'
-TCP_PORT = int(sys.argv[1])
-TCP_PORT2 = 125
+PORT2 = 8000
 BUFFER = 1024
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-tcpsock.setsocketopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-tcpsock.bind(('', TCP_PORT))
+tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+tcpsock.bind((HOST, PORT))
 
 tcpsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpsock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-tcpsock2.bind(('', TCP_PORT2))
+tcpsock2.bind((HOST, PORT2))
 
 threads=[]
 
@@ -103,7 +129,7 @@ while True:
     lock.release()
 
     print "new thread with ", conn.fileno()
-    newthread= ClientThread(conn, ip, port)
+    newthread= ClientThread(conn, HOST, PORT)
     newthread.daemon = True
     newthread.start()
     newthread2 = ClientThreadRead(conn)

@@ -1,40 +1,63 @@
-import sys
 import socket
-import select
-BUFFER = 1024
+import sys
+import collections
+import time
+import Queue
+import threading
+from threading import Thread
+from SocketServer import ThreadingMixIn
 HOST = 'localhost'
 PORT = 9000
+PORT2 = 8000
+BUFFER = 1024
 
-def send_server(conn, addr):
-    try:
+class ServerThread(Thread):
+    def __init(self, socket):
+        Thread.__init__(self)
+        self.socket = SocketServer
+
+    def run(self):
+        rcv = self.socket.recv(BUFFER)
+        print rcv
+        user_name = raw_input("Enter username: ")
+        self.socket.send(user_name)
         while True:
-            msg = raw_input()
-            conn.sendall(msg)
-
-def recv_server(conn, addr):
-    while True:
-        msg = conn.recv(BUFFER)
-        print msg
+            command = raw_input("<command> ex. <send> <destination> <msg> ")
+            self.socket.send(command)
 
 
-def main():
-    #socket tcp
-    clientSocket = socket(AF_INET, SOCK_STREAM)
-    try:
-        clientSocket.connect((host, port))
-    except:
-        print ('Failed to connect')
-        sys.exit()
+class ServerThreadread(Thread):
 
-    recvt = Thread(target=recv_server, args=(clientSocket, HOST)
-    recvt.start()
-    print('enter username\n')
-    send_server(clientSocket, HOST)
-    print('enter destination ')
-    send_server(clientSocket, HOST)
+    def __init__(self, socket):
+        Thread.__init__(self)
+        self.socket = socket
 
-    while(1):
-        print('enter msg')
-        send_server(clientSocket, HOST)
+    def run(self):
+        s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s2.connect((HOST,PORT2))
+        welcomemsg = s2.recv(BUFFER)
+        print welcomemsg
+        while True:
+            chat = s2.recv(BUFFER)
+            print chat
+            time.sleep(5)
 
-    clientSocket.close()
+threads = []
+global log
+log = 0
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+newthread = threading.Thread(target=ServerThread, args=(s,))
+#newthread.daemon = True
+newthread.start()
+newthread2 = threading.Thread(target=ServerThreadread, args=(s,))
+#newthread2.daemon = True
+newthread2.start()
+threads.append(newthread)
+threads.append(newthread2)
+while True:
+    for t in threads:
+        t.join(600)
+        if not t.isAlive():
+            break
+    break
