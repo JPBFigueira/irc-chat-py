@@ -48,7 +48,7 @@ log = 0
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
 newthread = threading.Thread(target=ServerThread, args=(s,))
-#newthread.daemon = True
+newthread.daemon = True
 newthread.start()
 newthread2 = threading.Thread(target=ServerThreadread, args=(s,))
 #newthread2.daemon = True

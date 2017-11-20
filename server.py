@@ -16,7 +16,6 @@ class ClientThread(Thread):
         self.socket = socket
         self.ip = "127.0.0.1"
         self.port = 9999
-        self.blockedusers = []
         print "hey"
 
     def run(self):
@@ -34,7 +33,6 @@ class ClientThread(Thread):
             lock.aquire()
             userfdmap.append(userfd)
             lock.release()
-            eflag = 1 #error flag
             while True:
                 command = self.socket.recv(BUFFER)
                 if "send" in command:
@@ -42,18 +40,18 @@ class ClientThread(Thread):
                     contentinner = content[2].partition(" ")
                     sendmsg = userdata + ": " + contentinner[2]
                     receiver = contentinner[0]
-                    eflag = 1
+                    online = 1
 
                     for z in userfdmap:
                         zi=z.partition(" ")
                         if zi[0] == receiver:
                             receivefd = int(zi[2])
-                            eflag =0
+                            online =0
                             lock.acquire()
                             sendqueues([receiverfd].put(sendmsg))
                             lock.release()
 
-                    if eflag == 1:
+                    if online == 1:
                         replymsg = 'User offline\n'
                         filename = receiver + '.txt'
                         file = open(filename, "a+")
@@ -79,7 +77,7 @@ class ClientThreadRead(Thread):
         conn2.send(welcomemsg)
         chat = "initial"
         #check if user is connected
-        while True: 
+        while True:
             for p in userfdmap:
                 if str(self.sock.fileno()) in p:
                     connected = 1
