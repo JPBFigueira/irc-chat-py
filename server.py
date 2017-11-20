@@ -5,80 +5,114 @@ from threading import Thread
 import Queue
 HOST = 'localhost'
 PORT = 9000
-BUFFER = BUFFER
+BUFFER = 1024
 
-def __main__:
+class ClientThread(thread):
+    def __init__(self, socket, ip, port):
+        Thread.__init__(self)
+        self.socket = socket
+        self.ip = "127.0.0.1"
+        self.port = 9999
+        self.blockedusers = []
+        print "hey"
 
-    activeUsers = []
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    activeUsers.append(serverSocket)
-    print('ServerSocket created\n')
-    try:
-        serverSocket.bind((HOST,PORT))
-    except socket.error as msg:
-        print('failed binding\n')
-        sys.exit()
-    print('binded\n')
-    serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    inputs = [serverSocket]
-    outputs = []
-    messages = {}
-    serverSocket.listen(10)
-    print('Listening\n')
-
-    while(True):
-        conn, addr = s.accept()
-        print('Connected with ' + addr[0] + ' -> ' + str(addr[1]), end = ' ')
-        thread = Thread(target=cthread, args=(conn, addr))   #Start a thread & connect
-        thread.start()
-#envia mensagens
-
-def broadcast_data(sock, message):
-    for socket in activeUsers:
-        if socket !=server_coket and socket != sock:
-            try:
-                socket.send(message)
-            except:
-                print('not only tho\n')
-                socket.close()
-                activeUsers.remove(socket)
-#criar ficheiro de cont
-def cthread(conn):
-    conn.send("hey bro") #TODO encode info?
-    while True:
-        user = conn.recv(BUFFER)
-        user.append(activeUsers)
-        createAcc(user)
-        if(already_logged):
-            print('already logged\n')
-            conn.close()
-
-        conn.send('gj nice user name '+ user + '\n')
-        dest = conn.recv(BUFFER)
+    def run(self):
         while True:
-            message = conn.recv(BUFFER)
-            if dest in activeUsers:
-                send_msg(user, dest, msg)
-            else:
-                conn.send('not online\n')
+            #logging in and appending username and userfd
+            self.socket.send('how u doin')
+            lock.acquire()
+            user_name = self.socket.recv(1024)
+            activeUsers.append(user_name)
+            lock.release()
+            print user_name + "logged in\n"
+            online = 1
+            fd = self.socket.fileno()
+            userfd = user_name + " " + str(fd)
+            lock.aquire()
+            userfdmap.append(userfd)
+            lock.release()
+            eflag = 1 #error flag
+            while True:
+                if "send" in command:
+                    content = command.partition(" ")
+                    contentinner = content[2].partition(" ")
+                    sendmsg = userdata + ": " + contentinner[2]
+                    receiver = contentinner[0]
 
-def createAcc(user):
-    file = open(user, 'w+')
-    f.close()
+                    for z in userfdmap:
+                        zi=z.partition(" ")
+                        if zi[0] == receiver:
+                            receivefd = int(zi[2])
+                            eflag =0
+                            lock.acquire()
+                            sendqueues([receiverfd].put(sendmsg))
+                            lock.release()
 
-def already_logged(user):
-    for user in activeUsers:
-        if user[0] == user:
-            return True
-    return False
+                    if eflag == 1:
+                        replymsg = "User offline\n"
+                        filename = receiver + ".txt"
+                        file = open(filename, w+)
+                        file.write(sendmsg)
+                        file.write("\n")
+                        file.close()
+                    else:
+                        replymsg = "sucess"
+                        self.socket.send(replymsg)
+                        
 
-def broadcast(user):
-    message = 'Message from ' + user ': '
-    for user_tuple in activeUsers:
-        user_tuple[1].sendall(message)
 
-def send_msg(username, dest, msg):
-    f = dest + 'txt'
-    file = open(f, 'w+')
-    f.writelines(user +'\n' +msg + '\n' + '-' + '\n')
-    f.close()
+
+class ClientThreadRead(thread):
+    def __init__(self, sock):
+        Thread.__init(self)
+        self.sock = sock
+
+
+
+lock = threading.Lock()
+global command
+command = ""
+
+sendqueues = {}
+activeUsers = []
+userfdmap = []
+
+TCP_IP = '0.0.0.0'
+TCP_PORT = int(sys.argv[1])
+TCP_PORT2 = 125
+BUFFER = 1024
+
+tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcpsock.setsocketopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+tcpsock.bind(('', TCP_PORT))
+
+tcpsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcpsock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+tcpsock2.bind(('', TCP_PORT2))
+
+threads=[]
+
+while True:
+    tcpsock.listen(10)
+    print "Server waiting\n"
+    (conn, (ip,port)) = tcpsock.accept()
+    q = Queue.Queue()
+    lock.acquire()
+
+    sendqueues[conn.fileno()] = q
+    lock.release()
+
+    print "new thread with ", conn.fileno()
+    newthread= ClientThread(conn, ip, port)
+    newthread.daemon = True
+    newthread.start()
+    newthread2 = ClientThreadRead(conn)
+    newthread2.start()
+    threads.append(newthread)
+    threads.append(newthread2)
+
+
+for t in threads:
+    t.join()
+
+print "exited"
