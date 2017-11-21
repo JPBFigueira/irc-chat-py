@@ -2,10 +2,10 @@ import socket
 import sys
 import collections
 import time
-import Queue
+import queue
 import threading
 from threading import Thread
-from SocketServer import ThreadingMixIn
+from socketserver import ThreadingMixIn
 HOST = 'localhost'
 PORT = 9000
 BUFFER = 1024
@@ -16,7 +16,7 @@ class ClientThread(Thread):
         self.socket = socket
         self.ip = "127.0.0.1"
         self.port = 9999
-        print "hey"
+        print ("hey")
 
     def run(self):
         while True:
@@ -26,7 +26,7 @@ class ClientThread(Thread):
             user_name = self.socket.recv(1024)
             activeUsers.append(user_name)
             lock.release()
-            print user_name + "logged in\n"
+            print (user_name + "logged in\n")
             online = 1
             fd = self.socket.fileno()
             userfd = user_name + " " + str(fd)
@@ -86,7 +86,7 @@ class ClientThreadRead(Thread):
 
                 try:
                     chat = sendqueues[self.sock.fileno()].get(False)
-                    print chat
+                    print (chat)
                     conn2.send(chat)
                 except Queue.Empty:
                     chat = "none"
@@ -118,7 +118,7 @@ threads=[]
 
 while True:
     tcpsock.listen(10)
-    print "Server waiting\n"
+    print ("Server waiting\n")
     (conn, (ip,port)) = tcpsock.accept()
     q = Queue.Queue()
     lock.acquire()
@@ -126,7 +126,7 @@ while True:
     sendqueues[conn.fileno()] = q
     lock.release()
 
-    print "new thread with ", conn.fileno()
+    print ("new thread with ", conn.fileno())
     newthread= ClientThread(conn, HOST, PORT)
     newthread.daemon = True
     newthread.start()
@@ -139,4 +139,4 @@ while True:
 for t in threads:
     t.join()
 
-print "exited"
+print ("exited")
